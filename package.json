@@ -1,0 +1,17 @@
+{
+  "name": "sign-language-app",
+  "version": "1.0.0",
+  "description": "مترجم لغة الإشارة - سيرفر + قاعدة بيانات + طوارئ",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node test.js"
+  },
+  "engines": {
+    "node": ">=22.13"
+  },
+  "dependencies": {
+    "@mediapipe/tasks-vision": "^1.2.3",
+    "express": "^4.21.0"
+  }
+}
