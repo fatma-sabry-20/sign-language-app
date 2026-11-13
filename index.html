@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>مترجم لغة الإشارة</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg1:#14122b; --bg2:#2b2466; --card:#ffffff14; --line:#ffffff26;
+    --text:#f4f2ff; --muted:#b9b3e6; --accent:#8b7bff; --ok:#4ade80; --danger:#ff5a6e;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;min-height:100%}
+  body{
+    font-family:"Cairo",Tahoma,sans-serif; color:var(--text);
+    background:radial-gradient(120% 80% at 50% 0%,var(--bg2),var(--bg1) 70%) fixed;
+    display:flex; justify-content:center; padding:20px 14px 100px;
+  }
+  main{width:100%; max-width:460px}
+  h1{font-size:1.5rem; margin:6px 0 2px; text-align:center}
+  .sub{margin:0 0 18px; text-align:center; color:var(--muted); font-size:.85rem}
+  section{display:none}
+  section.active{display:block}
+  [hidden]{display:none !important}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:20px; padding:14px; margin-bottom:12px}
+  .cam{position:relative; aspect-ratio:4/3; background:#0b0a1c; border-radius:14px; overflow:hidden; display:grid; place-items:center}
+  .cam video{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; transform:scaleX(-1)}
+  .cam canvas{position:absolute; inset:0; width:100%; height:100%; transform:scaleX(-1); pointer-events:none}
+  .seg{display:flex; gap:6px; margin-bottom:10px}
+  .seg button{padding:8px 6px; font-size:.85rem}
+  .seg button.on{background:#fff; color:#241d5c; border-color:#fff}
+  .live{margin-top:10px; text-align:center; font-weight:600; min-height:1.8em}
+  .live.hit{color:var(--ok)}
+  input[type=range]{width:100%; margin-top:6px; accent-color:var(--accent)}
+  .cam p{position:relative; margin:0; padding:16px; text-align:center; color:var(--muted); line-height:1.7}
+  .cam.err p{color:#ffd1d7}
+  .row{display:flex; gap:10px; margin-top:12px}
+  button{
+    font:inherit; font-weight:600; border-radius:14px; padding:12px 14px; cursor:pointer;
+    background:var(--card); color:var(--text); border:1px solid var(--line); flex:1;
+  }
+  button.primary{background:#fff; color:#241d5c; border-color:#fff}
+  button:focus-visible,input:focus-visible,nav button:focus-visible{outline:3px solid var(--accent); outline-offset:2px}
+  button:disabled{opacity:.45; cursor:not-allowed}
+  .label{font-size:.8rem; color:var(--muted); margin-bottom:6px}
+  .out{min-height:64px; font-size:1.25rem; font-weight:600; line-height:1.7}
+  .out.empty{color:var(--muted); font-weight:400}
+  .note{font-size:.8rem; color:var(--muted); text-align:center; line-height:1.7; margin:4px 8px 0}
+  input[type=text],input[type=tel],input[type=email],input[type=password]{
+    width:100%; font:inherit; padding:12px 14px; border-radius:14px; color:var(--text);
+    background:#0b0a1c80; border:1px solid var(--line); margin-top:10px;
+  }
+  .signs{display:flex; flex-wrap:wrap; gap:8px; margin-top:12px}
+  .sign{background:#0b0a1c80; border:1px solid var(--line); border-radius:14px; padding:10px 12px; text-align:center; min-width:88px; max-width:150px}
+  .sign.unknown{opacity:.6; border-style:dashed}
+  .sign b{display:block; font-size:1.8rem; line-height:1.2}
+  .sign span{font-size:.85rem; display:block}
+  .sign small{display:block; font-size:.7rem; color:var(--muted); margin-top:4px; line-height:1.5}
+  .sos{
+    width:100%; aspect-ratio:1; max-width:220px; margin:10px auto; display:grid; place-items:center;
+    border-radius:50%; background:var(--danger); color:#fff; font-size:1.6rem; font-weight:800;
+    border:6px solid #ff5a6e55; flex:none;
+  }
+  .status{text-align:center; min-height:48px; line-height:1.7}
+  .status.ok{color:var(--ok)}
+  .status.warn{color:#ffd1d7}
+  .err-msg{color:#ffd1d7; font-size:.85rem; min-height:1.4em; margin-top:8px; text-align:center}
+  ul{list-style:none; margin:0; padding:0}
+  li{display:flex; justify-content:space-between; align-items:center; gap:8px; padding:10px 0; border-bottom:1px solid var(--line)}
+  li:last-child{border-bottom:0}
+  li button, li a.wa{flex:none; padding:6px 10px; font-size:.8rem}
+  a.wa{background:#25d366; color:#06361a; border-radius:12px; font-weight:700; text-decoration:none}
+  .topbar{display:flex; justify-content:space-between; align-items:center; color:var(--muted); font-size:.8rem; margin-bottom:6px}
+  .topbar button{flex:none; padding:4px 10px; font-size:.75rem}
+  .link{background:none; border:0; color:var(--accent); text-decoration:underline; margin-top:10px; width:100%}
+  nav{
+    position:fixed; bottom:0; inset-inline:0; display:flex; justify-content:center;
+    background:#14122bee; border-top:1px solid var(--line); backdrop-filter:blur(8px);
+    padding:8px 8px calc(8px + env(safe-area-inset-bottom,0px));
+  }
+  nav div{display:flex; width:100%; max-width:460px; gap:6px}
+  nav button{background:none; border:0; padding:6px 4px; display:flex; flex-direction:column; align-items:center; gap:2px; color:var(--muted); font-size:.75rem}
+  nav button b{font-size:1.4rem; line-height:1}
+  nav button[aria-selected=true]{color:#fff; background:var(--card); border-radius:12px}
+  @media (prefers-reduced-motion:no-preference){ .sos.live{animation:pulse 1s infinite} }
+  @keyframes pulse{50%{transform:scale(1.04)}}
+</style>
+</head>
+<body>
+<main>
+  <h1>🤟 مترجم لغة الإشارة</h1>
+
+  <!-- ============ شاشة الدخول / التسجيل ============ -->
+  <div id="auth" hidden>
+    <p class="sub">سجّل دخولك عشان جهات اتصال الطوارئ تتحفظ على حسابك</p>
+    <div class="card">
+      <form id="authForm" autocomplete="on">
+        <input type="text" id="aName" placeholder="الاسم" autocomplete="name" hidden>
+        <input type="email" id="aEmail" placeholder="الإيميل" autocomplete="email" dir="ltr" required>
+        <input type="password" id="aPass" placeholder="كلمة السر (8 حروف على الأقل)" autocomplete="current-password" dir="ltr" required>
+        <div class="row"><button type="submit" class="primary" id="authBtn">دخول</button></div>
+        <div class="err-msg" id="authErr" role="alert"></div>
+        <button type="button" class="link" id="authToggle">معنديش حساب؟ إنشاء حساب جديد</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ============ التطبيق ============ -->
+  <div id="app" hidden>
+    <div class="topbar"><span id="hello"></span><button id="btnLogout">خروج</button></div>
+
+    <!-- الكاميرا: ترجمة الإشارة + تعليم إشارات جديدة -->
+    <section id="tab-camera" class="active">
+      <div class="card">
+        <div class="seg">
+          <button id="modeTranslate" class="on">ترجمة</button>
+          <button id="modeTrain">تعليم إشارة جديدة</button>
+        </div>
+        <div class="cam" id="cam">
+          <video id="video" autoplay playsinline muted hidden></video>
+          <canvas id="overlay"></canvas>
+          <p id="camMsg">اضغط «تشغيل الكاميرا» وسمح للمتصفح باستخدامها</p>
+        </div>
+        <div class="live" id="live">—</div>
+        <div class="row"><button id="btnCam" class="primary">تشغيل الكاميرا</button></div>
+      </div>
+
+      <div class="card" id="translatePanel">
+        <div class="label">الترجمة إلى نص</div>
+        <div id="out" class="out empty">—</div>
+        <div class="row">
+          <button id="btnSpeak" disabled>🔊 نطق النص</button>
+          <button id="btnClear" disabled>مسح</button>
+        </div>
+        <div class="label" style="margin-top:14px">حساسية التعرف: <span id="sensVal"></span></div>
+        <input type="range" id="sens" min="0.8" max="4" step="0.1" aria-label="حساسية التعرف">
+        <div class="note">لو بيكتب إشارات غلط قلّلي الحساسية، ولو مش بيتعرف على إشارتك زوّديها.</div>
+      </div>
+
+      <div class="card" id="trainPanel" hidden>
+        <div class="label">علّمي التطبيق إشارة: اكتبي معناها، اضغطي «سجّل»، وأدّي الإشارة قدام الكاميرا لمدة 3 ثواني</div>
+        <input type="text" id="tLabel" placeholder="معنى الإشارة (مثال: مرحبا)" maxlength="40">
+        <div class="row"><button id="btnRecord" class="primary">⏺ سجّل</button></div>
+        <div class="status" id="tStatus"></div>
+        <div class="label">الإشارات اللي اتعلّمها التطبيق</div>
+        <ul id="tList"></ul>
+        <div class="note">سجّلي كل إشارة 2–3 مرات بزوايا ومسافات مختلفة شوية عشان الدقة تزيد. الإشارات المدعومة: وضعيات اليد الثابتة (بيد واحدة أو الاتنين).</div>
+      </div>
+    </section>
+
+    <!-- نص إلى إشارة -->
+    <section id="tab-text">
+      <div class="card">
+        <div class="label">اكتب جملة وهتتحول لإشارات من القاموس</div>
+        <input type="text" id="txt" placeholder="مثال: أنا محتاج مساعدة" maxlength="500">
+        <div class="row"><button id="btnToSign" class="primary">حوّل إلى إشارات</button></div>
+        <div class="err-msg" id="signErr" role="alert"></div>
+        <div class="signs" id="signs"></div>
+      </div>
+      <p class="note">الإشارات بتتجاب من قاعدة البيانات (جدول signs). الكلمة اللي مش موجودة بتظهر بعلامة ❔.</p>
+    </section>
+
+    <!-- طوارئ -->
+    <section id="tab-sos">
+      <div class="card">
+        <button class="sos" id="btnSos">طوارئ</button>
+        <div id="sosStatus" class="status">اضغط مرة واحدة لإرسال تنبيه لأهلك. عندك 5 ثواني للإلغاء.</div>
+        <div class="row"><button id="btnCancel" hidden>إلغاء</button></div>
+        <ul id="sosResults"></ul>
+      </div>
+      <p class="note" id="sosNote"></p>
+    </section>
+
+    <!-- الأهل -->
+    <section id="tab-family">
+      <div class="card">
+        <div class="label">جهات اتصال الطوارئ</div>
+        <ul id="list"></ul>
+        <input type="text" id="fName" placeholder="الاسم" maxlength="60">
+        <div class="row">
+          <input type="tel" id="fPhone" placeholder="رقم الهاتف" dir="ltr" style="margin-top:0">
+          <button id="btnAdd" class="primary" style="flex:none">إضافة</button>
+        </div>
+        <div class="err-msg" id="famErr" role="alert"></div>
+      </div>
+    </section>
+
+    <nav><div role="tablist">
+      <button role="tab" data-tab="camera" aria-selected="true"><b>📷</b>الكاميرا</button>
+      <button role="tab" data-tab="text" aria-selected="false"><b>✍️</b>نص لإشارة</button>
+      <button role="tab" data-tab="sos" aria-selected="false"><b>🚨</b>طوارئ</button>
+      <button role="tab" data-tab="family" aria-selected="false"><b>👨‍👩‍👧</b>الأهل</button>
+    </div></nav>
+  </div>
+</main>
+
+<script src="/sign-core.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+
+/* ---------- التواصل مع السيرفر ---------- */
+async function api(method, url, body){
+  let r;
+  try{
+    r = await fetch(url, {
+      method, credentials:'same-origin',
+      headers: body ? {'Content-Type':'application/json'} : undefined,
+      body: body ? JSON.stringify(body) : undefined
+    });
+  }catch(e){ throw new Error('مفيش اتصال بالسيرفر'); }
+  const data = await r.json().catch(()=>({}));
+  if(r.status === 401 && url !== '/api/auth/login'){ showAuth(); throw new Error(data.error || 'سجّل دخول'); }
+  if(!r.ok) throw new Error(data.error || 'حصل خطأ');
+  return data;
+}
+
+/* ---------- الدخول والتسجيل ---------- */
+let registerMode = false;
+function setMode(reg){
+  registerMode = reg;
+  $('aName').hidden = !reg; $('aName').required = reg;
+  $('aPass').autocomplete = reg ? 'new-password' : 'current-password';
+  $('authBtn').textContent = reg ? 'إنشاء الحساب' : 'دخول';
+  $('authToggle').textContent = reg ? 'عندي حساب؟ تسجيل الدخول' : 'معنديش حساب؟ إنشاء حساب جديد';
+  $('authErr').textContent = '';
+}
+$('authToggle').addEventListener('click', ()=> setMode(!registerMode));
+
+$('authForm').addEventListener('submit', async e=>{
+  e.preventDefault();
+  $('authErr').textContent = '';
+  $('authBtn').disabled = true;
+  try{
+    const body = {email:$('aEmail').value, password:$('aPass').value};
+    if(registerMode) body.name = $('aName').value;
+    const {user} = await api('POST', registerMode ? '/api/auth/register' : '/api/auth/login', body);
+    $('aPass').value = '';
+    await showApp(user);
+  }catch(err){ $('authErr').textContent = err.message; }
+  $('authBtn').disabled = false;
+});
+
+$('btnLogout').addEventListener('click', async ()=>{
+  try{ await api('POST','/api/auth/logout'); }catch(e){}
+  stopCamera(); showAuth();
+});
+
+function showAuth(){
+  $('app').hidden = true; $('auth').hidden = false;
+  $('authErr').textContent = '';
+}
+async function showApp(user){
+  $('auth').hidden = true; $('app').hidden = false;
+  $('hello').textContent = 'أهلاً ' + user.name;
+  await Promise.all([loadFamily(), loadSamples()]);
+}
+
+/* ---------- التنقل بين الصفحات ---------- */
+document.querySelectorAll('nav [data-tab]').forEach(b=>{
+  b.addEventListener('click',()=>{
+    document.querySelectorAll('nav [data-tab]').forEach(x=>x.setAttribute('aria-selected', x===b));
+    document.querySelectorAll('section').forEach(s=>s.classList.toggle('active', s.id==='tab-'+b.dataset.tab));
+  });
+});
+
+/* ---------- تتبع اليد والتعرف على الإشارة ---------- */
+const GOOGLE_MODEL = 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task';
+let stream = null, landmarker = null, vision = null, rafId = 0, lastTs = 0;
+let samples = [], latestFeatures = null, mode = 'translate', recording = null;
+const stab = new SignCore.Stabilizer(8, 10);
+
+function camError(text){ $('cam').classList.add('err'); $('camMsg').hidden = false; $('camMsg').textContent = text; }
+function showCamMsg(text){ $('cam').classList.remove('err'); $('camMsg').hidden = false; $('camMsg').textContent = text; }
+
+async function loadLandmarker(){
+  if(landmarker) return;
+  showCamMsg('جاري تحميل موديل تتبع اليد (أول مرة بياخد شوية)...');
+  vision = await import('/vendor/mediapipe/vision_bundle.mjs');
+  const fileset = await vision.FilesetResolver.forVisionTasks('/vendor/mediapipe/wasm');
+  let lastErr;
+  for(const url of ['/models/hand_landmarker.task', GOOGLE_MODEL]){
+    for(const delegate of ['GPU','CPU']){
+      try{
+        landmarker = await vision.HandLandmarker.createFromOptions(fileset, {
+          baseOptions:{modelAssetPath:url, delegate}, runningMode:'VIDEO', numHands:2
+        });
+        return;
+      }catch(e){ lastErr = e; }
+    }
+  }
+  throw lastErr || new Error('model');
+}
+
+async function loadSamples(){
+  try{ samples = (await api('GET','/api/samples')).samples; }catch(e){ samples = []; }
+  renderLabels();
+}
+
+function stopCamera(){
+  cancelAnimationFrame(rafId); rafId = 0;
+  if(stream){ stream.getTracks().forEach(t=>t.stop()); stream = null; }
+  const c = $('overlay'); c.getContext('2d').clearRect(0,0,c.width,c.height);
+  $('video').hidden = true; $('camMsg').hidden = false; $('camMsg').textContent = 'الكاميرا متوقفة';
+  $('btnCam').textContent = 'تشغيل الكاميرا'; $('live').textContent = '—'; $('live').className = 'live';
+  latestFeatures = null; recording = null; stab.reset();
+}
+
+$('btnCam').addEventListener('click', async ()=>{
+  if(stream) return stopCamera();
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia)
+    return camError('المتصفح لا يسمح بالكاميرا هنا. افتح الصفحة من localhost أو https.');
+  $('btnCam').disabled = true;
+  try{
+    stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'user', width:{ideal:640}, height:{ideal:480}}, audio:false});
+    $('video').srcObject = stream; $('video').hidden = false;
+    await $('video').play().catch(()=>{});
+    $('btnCam').textContent = 'إيقاف الكاميرا';
+    await Promise.all([loadLandmarker(), loadSamples()]);
+    $('camMsg').hidden = true; $('cam').classList.remove('err');
+    loop();
+  }catch(e){
+    const m = {
+      NotAllowedError:'تم رفض إذن الكاميرا. اضغط على أيقونة القفل بجانب الرابط واختار «سماح» ثم أعد تحميل الصفحة.',
+      NotFoundError:'لم يتم العثور على كاميرا في الجهاز.',
+      NotReadableError:'الكاميرا مستخدمة في برنامج آخر. أغلقه وحاول تاني.'
+    };
+    const msg = m[e.name] || 'تعذر تشغيل التتبع. تأكد من اتصال الإنترنت وجرّب تاني.';
+    stopCamera(); camError(msg);
+  }
+  $('btnCam').disabled = false;
+});
+
+function draw(landmarkSets){
+  const v = $('video'), c = $('overlay');
+  if(c.width !== v.videoWidth){ c.width = v.videoWidth; c.height = v.videoHeight; }
+  const ctx = c.getContext('2d'); ctx.clearRect(0,0,c.width,c.height);
+  const du = new vision.DrawingUtils(ctx);
+  for(const lm of landmarkSets){
+    du.drawConnectors(lm, vision.HandLandmarker.HAND_CONNECTIONS, {color:'#8b7bff', lineWidth:3});
+    du.drawLandmarks(lm, {color:'#ffffff', lineWidth:1, radius:3});
+  }
+}
+
+function loop(){
+  if(!stream || !landmarker) return;
+  rafId = requestAnimationFrame(loop);
+  const v = $('video');
+  if(v.readyState < 2) return;
+  const now = performance.now();
+  if(now - lastTs < 66) return;           // حوالي 15 فريم في الثانية
+  lastTs = now;
+  const res = landmarker.detectForVideo(v, now);
+  draw(res.landmarks);
+  const hands = res.landmarks.map((lm,i)=>({landmarks:lm, handedness:(res.handedness[i]&&res.handedness[i][0])?res.handedness[i][0].categoryName:''}));
+  latestFeatures = SignCore.buildFeatures(hands);
+  if(mode === 'translate') recognize(latestFeatures); else collect(latestFeatures);
+}
+
+/* --- الترجمة --- */
+const sens = $('sens');
+sens.value = (()=>{ try{ return localStorage.getItem('sens') || '2'; }catch(e){ return '2'; } })();
+function showSens(){ $('sensVal').textContent = sens.value; }
+sens.addEventListener('input', ()=>{ showSens(); try{ localStorage.setItem('sens', sens.value); }catch(e){} });
+showSens();
+
+let words = [];
+function renderOut(){
+  const has = words.length>0;
+  $('out').textContent = has ? words.join(' ') : '—';
+  $('out').classList.toggle('empty', !has);
+  $('btnSpeak').disabled = !has; $('btnClear').disabled = !has;
+}
+function setLive(text, hit){ $('live').textContent = text; $('live').className = 'live' + (hit ? ' hit' : ''); }
+
+function recognize(f){
+  if(!samples.length){ setLive('علّمي التطبيق إشارة واحدة على الأقل من «تعليم إشارة جديدة»'); return; }
+  const r = SignCore.classify(f, samples, {k:5, maxDistance:Number(sens.value)});
+  const label = (r && r.confidence >= 0.6) ? r.label : null;
+  if(label) setLive('🤟 ' + label, true);
+  else setLive(f ? 'يد ظاهرة — إشارة غير معروفة' : 'مفيش يد ظاهرة');
+  const done = stab.push(label);
+  if(done){
+    words.push(done); renderOut();
+    api('POST','/api/translations',{content:done}).catch(()=>{});
+  }
+}
+$('btnClear').addEventListener('click', ()=>{ words=[]; renderOut(); });
+$('btnSpeak').addEventListener('click', ()=>{
+  if(!('speechSynthesis' in window)) return;
+  const u = new SpeechSynthesisUtterance(words.join(' ')); u.lang='ar-EG';
+  speechSynthesis.cancel(); speechSynthesis.speak(u);
+});
+
+/* --- التعليم --- */
+function setCamMode(m){
+  mode = m; recording = null; stab.reset();
+  $('modeTranslate').classList.toggle('on', m==='translate');
+  $('modeTrain').classList.toggle('on', m==='train');
+  $('translatePanel').hidden = m!=='translate';
+  $('trainPanel').hidden = m!=='train';
+  setLive(stream ? '—' : '—');
+}
+$('modeTranslate').addEventListener('click', ()=>setCamMode('translate'));
+$('modeTrain').addEventListener('click', ()=>{ setCamMode('train'); loadSamples(); });
+
+const TARGET = 45;   // عدد العينات للتسجيل الواحد (3 ثواني تقريباً)
+function collect(f){
+  if(!recording || !recording.active){ setLive(f ? 'اليد ظاهرة ✅' : 'مفيش يد ظاهرة'); return; }
+  if(!f) { setLive('أظهري يدك للكاميرا'); return; }
+  recording.buf.push(f);
+  $('tStatus').textContent = `جاري التسجيل... ${recording.buf.length}/${TARGET}`;
+  if(recording.buf.length >= TARGET) finishRecording();
+}
+async function finishRecording(){
+  const {label, buf} = recording; recording = null;
+  $('btnRecord').disabled = true;
+  try{
+    await api('POST','/api/samples',{label, samples:buf});
+    $('tStatus').textContent = `✅ اتحفظت إشارة «${label}»`; $('tStatus').className = 'status ok';
+    $('tLabel').value = '';
+    await loadSamples();
+  }catch(e){ $('tStatus').textContent = '❌ ' + e.message; $('tStatus').className = 'status warn'; }
+  $('btnRecord').disabled = false;
+}
+$('btnRecord').addEventListener('click', ()=>{
+  const label = $('tLabel').value.trim();
+  if(!stream || !landmarker){ $('tStatus').textContent = 'شغّلي الكاميرا الأول'; $('tStatus').className = 'status warn'; return; }
+  if(!label){ $('tLabel').focus(); return; }
+  $('btnRecord').disabled = true; $('tStatus').className = 'status warn';
+  let n = 3;
+  $('tStatus').textContent = `جهّزي الإشارة... ${n}`;
+  const t = setInterval(()=>{
+    n--;
+    if(n>0) return $('tStatus').textContent = `جهّزي الإشارة... ${n}`;
+    clearInterval(t);
+    recording = {label, buf:[], active:true};
+    $('btnRecord').disabled = false;
+  },1000);
+});
+function renderLabels(){
+  const counts = new Map();
+  samples.forEach(s=>counts.set(s.label,(counts.get(s.label)||0)+1));
+  const ul = $('tList'); ul.replaceChildren();
+  if(!counts.size){ const li = document.createElement('li'); li.textContent = 'لسه ما علّمتيش أي إشارة'; ul.appendChild(li); return; }
+  for(const [label,n] of counts){
+    const li = document.createElement('li');
+    const t = document.createElement('span'); t.textContent = `${label} (${n} عينة)`;
+    const b = document.createElement('button'); b.textContent = 'حذف';
+    b.addEventListener('click', async ()=>{
+      try{ await api('DELETE','/api/samples/'+encodeURIComponent(label)); await loadSamples(); }
+      catch(e){ $('tStatus').textContent = '❌ ' + e.message; }
+    });
+    li.append(t,b); ul.appendChild(li);
+  }
+}
+
+/* ---------- نص -> إشارة (من قاعدة البيانات) ---------- */
+$('btnToSign').addEventListener('click', async ()=>{
+  $('signErr').textContent = '';
+  const box = $('signs'); box.replaceChildren();
+  try{
+    const {signs} = await api('POST','/api/text-to-sign',{text:$('txt').value});
+    signs.forEach(s=>{
+      const d = document.createElement('div'); d.className = 'sign' + (s.found ? '' : ' unknown');
+      const b = document.createElement('b'); b.textContent = s.emoji;
+      const w = document.createElement('span'); w.textContent = s.word;
+      const t = document.createElement('small'); t.textContent = s.description;
+      d.append(b,w,t); box.appendChild(d);
+    });
+  }catch(e){ $('signErr').textContent = e.message; }
+});
+
+/* ---------- الأهل ---------- */
+async function loadFamily(){
+  const list = $('list'); list.replaceChildren();
+  try{
+    const {contacts} = await api('GET','/api/contacts');
+    if(!contacts.length){
+      const li = document.createElement('li'); li.textContent = 'لا توجد جهات اتصال بعد'; list.appendChild(li);
+    }
+    contacts.forEach(c=>{
+      const li = document.createElement('li');
+      const t = document.createElement('span'); t.textContent = c.name + ' - ' + c.phone;
+      const b = document.createElement('button'); b.textContent = 'حذف';
+      b.addEventListener('click', async ()=>{
+        try{ await api('DELETE','/api/contacts/'+c.id); loadFamily(); }
+        catch(e){ $('famErr').textContent = e.message; }
+      });
+      li.append(t,b); list.appendChild(li);
+    });
+  }catch(e){ $('famErr').textContent = e.message; }
+}
+$('btnAdd').addEventListener('click', async ()=>{
+  $('famErr').textContent = '';
+  const name = $('fName').value.trim();
+  if(!name) return $('fName').focus();
+  try{
+    await api('POST','/api/contacts',{name, phone:$('fPhone').value});
+    $('fName').value = ''; $('fPhone').value = '';
+    loadFamily();
+  }catch(e){ $('famErr').textContent = e.message; }
+});
+
+/* ---------- الطوارئ ---------- */
+let timer = null;
+function setStatus(text, cls=''){ $('sosStatus').textContent = text; $('sosStatus').className = 'status ' + cls; }
+function endCountdown(){
+  clearInterval(timer); timer = null;
+  $('btnSos').classList.remove('live'); $('btnCancel').hidden = true;
+}
+function getLocation(){
+  return new Promise(resolve=>{
+    if(!navigator.geolocation) return resolve(null);
+    navigator.geolocation.getCurrentPosition(
+      p => resolve({lat:p.coords.latitude, lng:p.coords.longitude}),
+      () => resolve(null),
+      {enableHighAccuracy:true, timeout:6000, maximumAge:30000}
+    );
+  });
+}
+async function sendSos(){
+  setStatus('جاري تحديد موقعك وإرسال التنبيه...', 'warn');
+  const loc = await getLocation();
+  try{
+    const r = await api('POST','/api/sos', loc || {});
+    const sent = r.results.filter(x=>x.status==='sent').length;
+    setStatus(r.smsEnabled
+      ? `✅ تم إرسال SMS إلى ${sent} من ${r.results.length}`
+      : '✅ تم تسجيل التنبيه. اضغط زر واتساب لكل شخص لإرسال الرسالة:', 'ok');
+    const ul = $('sosResults'); ul.replaceChildren();
+    r.results.forEach(x=>{
+      const li = document.createElement('li');
+      const n = document.createElement('span');
+      n.textContent = x.name + (x.status==='sent' ? ' ✅' : x.status==='failed' ? ' ❌' : '');
+      li.appendChild(n);
+      if(x.status !== 'sent'){
+        const a = document.createElement('a'); a.className='wa'; a.textContent='واتساب';
+        a.href = x.whatsapp; a.target='_blank'; a.rel='noopener';
+        li.appendChild(a);
+      }
+      ul.appendChild(li);
+    });
+    if(!loc) $('sosNote').textContent = 'ملحوظة: الموقع مش متاح، فالرسالة اتبعتت من غير موقع.';
+  }catch(e){ setStatus('❌ ' + e.message, 'warn'); }
+}
+$('btnSos').addEventListener('click', ()=>{
+  if(timer) return;
+  let n = 5;
+  $('sosResults').replaceChildren(); $('sosNote').textContent = '';
+  $('btnSos').classList.add('live'); $('btnCancel').hidden = false;
+  setStatus('سيتم إرسال التنبيه خلال ' + n + ' ثواني...', 'warn');
+  timer = setInterval(()=>{
+    n--;
+    if(n>0) return setStatus('سيتم إرسال التنبيه خلال ' + n + ' ثواني...', 'warn');
+    endCountdown(); sendSos();
+  },1000);
+});
+$('btnCancel').addEventListener('click', ()=>{ endCountdown(); setStatus('تم إلغاء التنبيه.'); });
+
+/* ---------- بداية التشغيل: هل المستخدم مسجل دخول؟ ---------- */
+(async ()=>{
+  try{ const {user} = await api('GET','/api/me'); await showApp(user); }
+  catch(e){ showAuth(); }
+})();
+</script>
+</body>
+</html>
